@@ -122,7 +122,7 @@ class IMPORT_ANIM_OT_tl2(Operator):
         )
 
     filter_glob = StringProperty(
-        default="*.ANIMATION",
+        default="*.SKELETON",
         options={'HIDDEN'}
         )
 
