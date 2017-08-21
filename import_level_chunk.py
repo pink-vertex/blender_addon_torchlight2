@@ -434,27 +434,3 @@ def load_level_chunk(xml_path, tl2_path, chunk_file, parent=None, layout_group=N
 
 		layout_link_instance.dupli_type = "GROUP"
 		layout_link_instance.dupli_group = data_group
-
-def test():
-	XML_PATH = "/home/thorsten/Dokumente/Blender/tl2_xml/catacomb"
-	TL2_PATH = "/home/thorsten/TL2_MEDIA"
-	CATACOMB = "LEVELSETS/CATACOMB.DAT"
-	CHUNK    = "LAYOUTS/CATACOMB/1X1NE/1X1_NE_BB_A.LAYOUT"
-	MATERIAL = "LEVELSETS/CATACOMB/CATACOMB.MATERIAL"
-
-	load_level_chunk(XML_PATH, TL2_PATH, CHUNK)
-
-def test_levelset():
-	XML_PATH = "/home/thorsten/Dokumente/Blender/tl2_xml/catacomb"
-	TL2_PATH = "/home/thorsten/TL2_MEDIA"
-	LEVELSET = "LEVELSETS/ESTHSHRINE.DAT"
-	CHUNK    = "LAYOUTS/ESTHSHRINE/1X1NE/1X1_NE_BB_A.LAYOUT"
-	MATERIAL = "LEVELSETS/ESTHSHRINE/ESTHSHRINE.MATERIAL"
-
-	tileset_parser = DatParser("PIECE", Piece)
-	pieces = tileset_parser.parse(os.path.join(TL2_PATH, LEVELSET))
-
-	attributes = "file", "tag"
-	for i, piece in enumerate(pieces):
-		if any(not hasattr(piece, attr) for attr in attributes):
-			print(piece.name)
