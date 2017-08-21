@@ -13,9 +13,9 @@ and install it via Blender->User Preferences->Addons->Install from File.
 
 Search for Torchlight 2 Importer, open the panel and set the addon preferences:
 
-* `Torchlight Media Directory`: Root Directory of your unpacked game archives typically named MEDIA
-* `OGRE XML Converter`: Location of OgreXMLConverter.exe
-* `XML Output Directory`: Converted XML Files will be saved in this directory
+* ``Torchlight Media Directory``: Root Directory of your unpacked game archives typically named MEDIA
+* ``OGRE XML Converter``: Location of OgreXMLConverter.exe
+* ``XML Output Directory``: Converted XML Files will be saved in this directory
 
 Usage
 ============================================================
@@ -33,5 +33,5 @@ Notes
 ============================================================
 
 * Some wardrobe meshes do not work properly with their skeleton files in the same directory.
-  Choose the `HUM_M.SKELETON` / `HUM_F.SKELETON` from `MEDIA/MODELS/PCS/HUM_*` instead. You can set 
+  Choose the ``HUM_M.SKELETON`` / ``HUM_F.SKELETON`` from ``MEDIA/MODELS/PCS/HUM_*`` instead. You can set 
   the path quickly by using the Set Skeleton Path Button
