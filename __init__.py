@@ -170,30 +170,79 @@ class IMPORT_ANIM_OT_tl2(Operator):
         return {'FINISHED'}    
 
 
+def process_for_export(mesh):
+    import bmesh
+    bm = bmesh.new()
+    bm.from_mesh(mesh)
+
+    def vec_equals(a, b):
+        return (a - b).magnitude < 5e-2
+
+    # split vertices with multiple uv coordinates
+    seams = []
+    tag_verts = set()
+    layer_uv = bm.loops.layers.uv.active
+
+    for edge in bm.edges:
+        if not edge.is_manifold: continue
+
+        uvs   = [None] * 2
+        loops = [None] * 2
+
+        loops[0] = list(edge.link_loops)
+        loops[1] = [loop.link_loop_next for loop in loops[0]]
+
+        for i in range(2):
+            uvs[i] = list(map(lambda l: l[layer_uv].uv, loops[i]))
+
+        results = (vec_equals(uvs[0][0], uvs[1][1]),
+                   vec_equals(uvs[0][1], uvs[1][0]))
+
+        if not all(results):
+            if results[0]: tag_verts.add(loops[0][0].vert)
+            if results[1]: tag_verts.add(loops[0][1].vert)
+            seams.append(edge)
+
+    tag_verts = list(tag_verts)
+    bmesh.ops.split_edges(bm, edges=seams, verts=tag_verts, use_verts=True)
+
+    # triangulate
+    bmesh.ops.triangulate(bm, faces=bm.faces[:], quad_method=0, ngon_method=0)
+    bm.to_mesh(mesh)
+    bm.free()
+
+
 class EXPORT_MESH_OT_tl2weapon(Operator):
     bl_label = "Export Torchlight 2 Weapon MESH"
     bl_idname = "export_mesh.tl2weapon"
     bl_options = set()
 
-    filepath = StringProperty(name="XML output file")
+    filepath = StringProperty(name="MESH output file", subtype="FILE_PATH")
+    filename = StringProperty(name="File Name", default="", subtype="FILE_NAME")
 
     @classmethod
     def poll(cls, context):
         return (context.active_object and 
                 context.active_object.type == "MESH" and
             len(context.active_object.data.uv_layers) == 1 and
-            len(context.active_object.data.materials) >  1)
+            len(context.active_object.data.materials) >  0)
 
     def invoke(self, context, event):
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
 
     def execute(self, context):
-        xml_output = self.filepath
-        mesh_output = xml_output.rsplit(".")[0] + ".MESH"
-        xml_stream = open(xml_output, "w")
+        mesh = context.active_object.data
+        process_for_export(mesh)
 
-        write_mesh_weapon(context.active_object.data, xml_stream)
+        mesh_output = self.filepath
+        xml_output = os.path.join(
+            get_addon_pref(context).xml_output,
+            self.filename.rsplit(".")[0] + "_EXPORT.XML")
+
+        xml_stream = open(xml_output, "w")
+        write_mesh_weapon(mesh, xml_stream)
+        xml_stream.close()
         convert_to_mesh(xml_output, mesh_output)
         return {'FINISHED'}
 
@@ -204,7 +253,8 @@ class EXPORT_MESH_OT_tl2wardrobe(Operator):
     bl_options = set()
 
     filepath = StringProperty(name="XML output file", subtype="FILE_PATH")
-    skeletonlink = StringProperty(name="skeletonlink")
+    filename = StringProperty(name="File Name", default="", subtype="FILE_NAME")
+    skeletonlink = StringProperty(name="skeletonlink", subtype="FILE_NAME")
     bone_name_prefix = StringProperty(name="Bone Name Prefix")
 
     @classmethod
@@ -212,17 +262,17 @@ class EXPORT_MESH_OT_tl2wardrobe(Operator):
         return (context.active_object and 
                 context.active_object.type == "MESH" and
             len(context.active_object.data.uv_layers) == 1 and
-            len(context.active_object.data.materials) >  1)
+            len(context.active_object.data.materials) >  0)
 
     def invoke(self, context, event):
         obj = context.active_object
-        self.skeletonlink = obj.get("skeletonlink", obj.name + ".skeleton")
-        self.filepath = os.path.join(DOC_PATH, obj.name + "_exported.xml")
+        self.skeletonlink = context.scene.get('tl2_skel_file') # obj.get("skeletonlink", obj.name + ".SKELETON")
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
 
     def execute(self, context):
         obj = context.active_object
+        process_for_export(obj.data)
 
         if (len(obj.modifiers) > 0 and 
             obj.modifiers[0].type == "ARMATURE" and
@@ -239,16 +289,20 @@ class EXPORT_MESH_OT_tl2wardrobe(Operator):
         else:
             self.vgroups = tuple(range(len(obj.vertex_groups)))
 
-        xml_output = self.filepath
-        mesh_output = xml_output.rsplit(".")[0] + ".MESH"
-        xml_stream = open(xml_output, "w")
+        mesh_output = self.filepath
+        xml_output = os.path.join(
+            get_addon_pref(context).xml_output,
+            self.filename.rsplit(".")[0] + "_EXPORT.XML")
 
+        xml_stream = open(xml_output, "w")
         write_mesh_wardrobe(
             context.active_object.data,
             self.vgroups,
             self.skeletonlink,
             xml_stream
         )
+        xml_stream.close()
+
         convert_to_mesh(xml_output, mesh_output)
         return {'FINISHED'}
 
@@ -462,7 +516,6 @@ def register():
     Scene.tl2_mesh_file = StringProperty(name="Mesh File", subtype="FILE_PATH")
     Scene.tl2_skel_file = StringProperty(name="Skeleton File", subtype="FILE_PATH")
     Scene.tl2_mat_file  = StringProperty(name="Material File", subtype="FILE_PATH")
-    Scene.tl2_xml_dir   = StringProperty(name="XML Directory", subtype="DIR_PATH")
 
     bpy.utils.register_class(Torchlight2Preferences)
     bpy.utils.register_class(IMPORT_MESH_OT_tl2)
@@ -491,4 +544,3 @@ def unregister():
     del Scene.tl2_mesh_file
     del Scene.tl2_skel_file
     del Scene.tl2_mat_file
-    del Scene.tl2_xml_dir
