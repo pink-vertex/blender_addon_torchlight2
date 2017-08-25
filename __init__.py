@@ -36,7 +36,8 @@ from bpy.props import (BoolProperty, FloatProperty, FloatVectorProperty, IntProp
 from .import_mesh import MeshConverter
 from .import_anim import load_animation
 from .import_level_chunk import load_level_chunk
-from .utils import get_addon_pref
+from .utils import get_addon_pref, convert_to_xml
+from .export_anim import write_skeleton
 from .export_mesh import (
     write_mesh_weapon,
     write_mesh_wardrobe, 
@@ -140,6 +141,11 @@ class IMPORT_ANIM_OT_tl2(Operator):
         name="Armature Object"
         )
 
+    missing_channels = BoolProperty(
+        name="Insert Keyframes for PoseBones without Data",
+        default=False
+        )
+
     @classmethod
     def poll(cls, context):
         return (context.active_object and 
@@ -170,7 +176,7 @@ class IMPORT_ANIM_OT_tl2(Operator):
         return {'FINISHED'}    
 
 
-def process_for_export(mesh):
+def process_for_export(mesh, do_copy=True):
     import bmesh
     bm = bmesh.new()
     bm.from_mesh(mesh)
@@ -208,9 +214,11 @@ def process_for_export(mesh):
 
     # triangulate
     bmesh.ops.triangulate(bm, faces=bm.faces[:], quad_method=0, ngon_method=0)
-    bm.to_mesh(mesh)
+    mesh_export = bpy.data.meshes.new(mesh.name + "_EXPORT") if do_copy else mesh
+    bm.to_mesh(mesh_export)
     bm.free()
 
+    return mesh_export
 
 class EXPORT_MESH_OT_tl2weapon(Operator):
     bl_label = "Export Torchlight 2 Weapon MESH"
@@ -233,7 +241,7 @@ class EXPORT_MESH_OT_tl2weapon(Operator):
 
     def execute(self, context):
         mesh = context.active_object.data
-        process_for_export(mesh)
+        mesh_export = process_for_export(mesh)
 
         mesh_output = self.filepath
         xml_output = os.path.join(
@@ -241,8 +249,8 @@ class EXPORT_MESH_OT_tl2weapon(Operator):
             self.filename.rsplit(".")[0] + "_EXPORT.XML")
 
         xml_stream = open(xml_output, "w")
-        write_mesh_weapon(mesh, xml_stream)
-        xml_stream.close()
+        write_mesh_weapon(mesh_export, xml_stream)
+        bpy.data.meshes.remove(mesh_export)
         convert_to_mesh(xml_output, mesh_output)
         return {'FINISHED'}
 
@@ -272,7 +280,7 @@ class EXPORT_MESH_OT_tl2wardrobe(Operator):
 
     def execute(self, context):
         obj = context.active_object
-        process_for_export(obj.data)
+        process_for_export(obj.data, False)
 
         if (len(obj.modifiers) > 0 and 
             obj.modifiers[0].type == "ARMATURE" and
@@ -301,9 +309,43 @@ class EXPORT_MESH_OT_tl2wardrobe(Operator):
             self.skeletonlink,
             xml_stream
         )
-        xml_stream.close()
 
         convert_to_mesh(xml_output, mesh_output)
+        return {'FINISHED'}
+
+
+class EXPORT_ANIM_OT_tl2anim(Operator):
+    bl_label = "Export Torchlight 2 SKELETON Animation"
+    bl_idname = "export_anim.tl2anim"
+    bl_options = set()
+
+    filepath = StringProperty(name="SKELETON output file", subtype="FILE_PATH")
+    filename = StringProperty(name="File Name", default="", subtype="FILE_NAME")
+    bind_pose = BoolProperty(name="Bind Pose", default=False)
+
+    @classmethod
+    def poll(cls, context):
+        return (context.active_object and 
+                context.active_object.type == "ARMATURE")
+
+    def invoke(self, context, event):
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
+    def execute(self, context):
+        obj = context.active_object
+        if not self.bind_pose and (obj.animation_data is None or obj.animation_data.action is None):
+            self.report({'ERROR'}, "No action assigned to the armature")
+            return {'CANCELLED'}
+
+        skel_output = self.filepath
+        xml_output = os.path.join(
+            get_addon_pref(context).xml_output,
+            self.filename.rsplit(".")[0] + "_EXPORT.xml")
+
+        xml_stream = open(xml_output, "w")
+        write_skeleton(xml_stream, obj, self.bind_pose)
+        convert_to_xml(xml_output, skel_output)
         return {'FINISHED'}
 
 
@@ -485,6 +527,7 @@ class PROPERTIES_PT_import_tl2(Panel):
         col.operator("import_anim.tl2", "Import Animation")
         col.operator("export_mesh.tl2weapon",   "Export Weapon Mesh")
         col.operator("export_mesh.tl2wardrobe", "Export Wardrobe Mesh")
+        col.operator("export_anim.tl2anim", "Export Animation")
         col.operator("material.tl2_assign_wardrobe_textures")
         col.operator("material.tl2_assign_body_textures")
         col.operator_menu_enum("scene.tl2_set_skeleton_path", "gender")
@@ -526,13 +569,14 @@ def register():
     bpy.utils.register_class(IMPORT_ANIM_OT_tl2)
     bpy.utils.register_class(EXPORT_MESH_OT_tl2weapon)
     bpy.utils.register_class(EXPORT_MESH_OT_tl2wardrobe)
+    bpy.utils.register_class(EXPORT_ANIM_OT_tl2anim)
     bpy.utils.register_class(PROPERTIES_PT_import_tl2)
 
 def unregister():
     bpy.utils.unregister_class(PROPERTIES_PT_import_tl2)
+    bpy.utils.unregister_class(EXPORT_ANIM_OT_tl2anim)
     bpy.utils.unregister_class(EXPORT_MESH_OT_tl2weapon)
     bpy.utils.unregister_class(EXPORT_MESH_OT_tl2wardrobe)
-
     bpy.utils.unregister_class(IMPORT_SCENE_OT_tl2_import_level_chunk)
     bpy.utils.unregister_class(SCENE_OT_tl2_set_skeleton_path)
     bpy.utils.unregister_class(MATERIAL_OT_tl2_assign_body_textures)

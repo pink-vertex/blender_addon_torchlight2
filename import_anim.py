@@ -8,7 +8,7 @@ def insert_keyframe(fcurves, time, values, interpolation="LINEAR"):
         kf = fcu.keyframe_points.insert(time, val, {'FAST'})
         kf.interpolation = interpolation
     
-def load_animation(anm_input, xml_dir, fps, arm_obj=None):
+def load_animation(anm_input, xml_dir, fps, arm_obj):
     xml_output = os.path.join(xml_dir, os.path.basename(anm_input).split('.')[0] + "_anm.xml")
 
     convert_to_xml(anm_input, xml_output)

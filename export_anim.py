@@ -103,15 +103,15 @@ MAT3_ROT_INV = Matrix((
     ( 0,  0,  1)
 ))
 
-def write_skeleton(xml, ob, bind_pose=False):
+def write_skeleton(stream, ob, bind_pose=False):
+    xml = XMLWriter(stream)
     am = ob.data
-    action = ob.animation_data.action
-
     bone_order = am['tl2_id']
-    if not bind_pose:
-        anm_data = collect_anm_data(action, am, bone_order) 
-
     bones = tuple(am.bones[name] for name in bone_order)
+
+    if not bind_pose:
+        action = ob.animation_data.action
+        anm_data = collect_anm_data(action, am, bone_order) 
 
     xml.tag_open_format(SKELETON)
     xml.tag_open("bones")
@@ -128,18 +128,20 @@ def write_skeleton(xml, ob, bind_pose=False):
     xml.tag_open("bonehierarchy")
 #   for root in filter(is_root, am.bones):
 #       write_bone_parent(xml, root)
-    for bone_name in bone_order:
-        ad = anm_data[bone_name]
-        if ad.do_skip() or ad.bone.parent is None: continue
-        xml.tag_format(BONEPARENT, bone=ad.bone.name, parent=ad.bone.parent.name)
+    for bone in bones:
+        if bone.parent is None:
+            continue
+        if not bind_pose:
+            ad = anm_data[bone.name]
+            if ad.do_skip(): continue
+        xml.tag_format(BONEPARENT, bone=bone.name, parent=bone.parent.name)
     xml.tag_close("bonehierarchy")
-
-    fps = bpy.context.scene.render.fps
-    anm_length = (action.frame_range[1] - action.frame_range[0]) / fps
 
     xml.tag_open("animations")
 
     if not bind_pose:
+        fps = bpy.context.scene.render.fps
+        anm_length = (action.frame_range[1] - action.frame_range[0]) / fps
         xml.tag_open_format(ANIMATION, name=action.name, length=anm_length)
         xml.tag_open("tracks")
         for bone_name in bone_order:
@@ -156,6 +158,7 @@ def write_skeleton(xml, ob, bind_pose=False):
     xml.tag_close("animation")
     xml.tag_close("animations")
     xml.tag_close("skeleton")
+    xml.finish()
 
 def collect_anm_data(action, armature, bone_names):
     data_path_pattern = re.compile('pose\.bones\["(?P<name>.+?)"\]\.(?P<attr>location|rotation_quaternion)')
