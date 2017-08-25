@@ -482,6 +482,8 @@ class MeshConverter(object):
                     eb.tail = eb.head + projection
 
         bpy.ops.object.mode_set(mode="OBJECT")
+
+        arm['tl2_id'] = tuple(bone.name for bone in self.bones)
                 
         obj.show_x_ray = True
         obj.rotation_euler = Euler((math.pi / 2.0, 0.0, 0.0))
