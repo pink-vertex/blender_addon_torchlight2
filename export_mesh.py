@@ -1,6 +1,7 @@
 from .utils import os, bpy, get_addon_pref
 
-CMD_EXPORT = "{converter:s} -l 0 -e -r {input:s} {output:s}"
+# CMD_EXPORT = "{converter:s} -l 0 -e -r {input:s} {output:s}"
+CMD_EXPORT = "{converter:s} {input:s} {output:s}"
 SHARED_GEOMETRY = "<sharedgeometry vertexcount=\"{vertexcount:d}\">"
 
 VB_POSITION = "positions=\"{positions:s}\" "
@@ -166,16 +167,15 @@ def write_mesh_wardrobe(stream, mesh, bones, skel_link):
 	xml.tag_open("mesh")
 	xml.tag_open("submeshes")
 
-	offset = 0
 	for mat_index in range(len(mesh.materials)):
-		offset += write_submesh_wardrobe(xml, mesh, bones, mat_index, offset)
+		write_submesh_wardrobe(xml, mesh, bones, mat_index)
 
 	xml.tag_close("submeshes")
 	xml.tag_format(SKELETONLINK, name=skel_link)
 	xml.tag_close("mesh")
 	xml.finish()
 
-def write_submesh_wardrobe(xml, mesh, bones, mat_index, offset):
+def write_submesh_wardrobe(xml, mesh, bones, mat_index):
 	xml.tag_open_format(SUBMESH,
 		material = mesh.materials[mat_index].name,
 		shared_vertices="false",
@@ -190,7 +190,8 @@ def write_submesh_wardrobe(xml, mesh, bones, mat_index, offset):
 
 	xml.tag_open_format(FACES, facecount=len(polys))
 	for poly in polys:
-		indices = [i - offset for i in poly.vertices]
+        # convert from mesh vertex index (mvi) to submesh index (smi)
+		indices = [vertex_indices.index(mvi) for mvi in poly.vertices]
 		xml.tag_format(FACE, v1=indices[0], v2=indices[1], v3=indices[2])
 	xml.tag_close("faces")
 
@@ -200,12 +201,12 @@ def write_submesh_wardrobe(xml, mesh, bones, mat_index, offset):
 	xml.tag_close("geometry")
 
 	xml.tag_open("boneassignments")
-	for index in vertex_indices:
-		v = mesh.vertices[index]
+	for smi, mvi in enumerate(vertex_indices):
+		v = mesh.vertices[mvi]
 		for g in v.groups:
 			if g.group in bones:
 				xml.tag_format(BONE_ASSIGNMENT, 
-					vertexindex=index - offset,
+					vertexindex=smi,
 					boneindex=g.group,
 					weight=g.weight
 				) 		

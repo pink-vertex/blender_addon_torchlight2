@@ -268,7 +268,11 @@ class EXPORT_MESH_OT_tl2wardrobe(Operator):
 
     def invoke(self, context, event):
         obj = context.active_object
-        self.skeletonlink = context.scene.get('tl2_skel_file') # obj.get("skeletonlink", obj.name + ".SKELETON")
+        self.skeletonlink = obj.get(
+            "skeletonlink",
+            os.path.basename(context.scene.get('tl2_skel_file')) or 
+            obj.name + ".SKELETON"
+        )
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
 
