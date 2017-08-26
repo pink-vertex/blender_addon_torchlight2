@@ -106,7 +106,11 @@ MAT3_ROT_INV = Matrix((
 def write_skeleton(stream, ob, bind_pose=False):
     xml = XMLWriter(stream)
     am = ob.data
-    bone_order = am['tl2_id']
+
+    bone_order = am.get('tl2_id')
+    if bone_order is None:
+        bone_order = gen_bone_order(am)
+
     bones = tuple(am.bones[name] for name in bone_order)
 
     if not bind_pose:
@@ -126,8 +130,6 @@ def write_skeleton(stream, ob, bind_pose=False):
     xml.tag_close("bones")
 
     xml.tag_open("bonehierarchy")
-#   for root in filter(is_root, am.bones):
-#       write_bone_parent(xml, root)
     for bone in bones:
         if bone.parent is None:
             continue
@@ -176,7 +178,13 @@ def collect_anm_data(action, armature, bone_names):
     return anm_data
 
 def is_root(bone): return bone.parent is None
-
+def gen_bone_order(armature):
+    result = []
+    for root in filter(is_root, armature.bones):
+        result.append(root.name)
+        result.extend(child.name for child in root.children_recursive)
+    return result
+ 
 def calc_rest(bone):
     has_parent = bone.parent is not None
     if not has_parent:
@@ -197,12 +205,6 @@ def write_bone(xml, name, bid, loc, rot):
     xml.tag_format(AXIS, x=axis.x, y=axis.y, z=axis.z) 
     xml.tag_close("rotation")
     xml.tag_close("bone")
-
-def write_bone_parent(xml, bone):
-    if bone.parent is not None:
-        xml.tag_format(BONEPARENT, bone=bone.name, parent=bone.parent.name)
-    for child in bone.children:
-        write_bone_parent(xml, child)
 
 def calc_keyframe(bone, loc, rot):
     mat_basis = rot.to_matrix().to_4x4()
