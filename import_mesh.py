@@ -473,13 +473,17 @@ class MeshConverter(object):
             elif sum(1 for child in filter(no_tag, eb.children)) == 1:
                 child = next(filter(no_tag, eb.children))
             else:
-                child = None
+                continue
 
-            if child:
-                head_to_head = child.head - eb.head
-                projection = head_to_head.project(eb.y_axis)
-                if eb.y_axis.dot(projection) > 5e-2:
-                    eb.tail = eb.head + projection
+            head_to_head = child.head - eb.head
+            projection = head_to_head.project(eb.y_axis)
+            if eb.y_axis.dot(projection) > 5e-2:
+                eb.tail = eb.head + projection
+
+        for eb in arm.edit_bones:
+            for child in eb.children:
+                if (eb.tail - child.head).magnitude < 5e-4:
+                    child.use_connect = True
 
         bpy.ops.object.mode_set(mode="OBJECT")
 
