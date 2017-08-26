@@ -24,7 +24,7 @@ def load_animation(anm_input, xml_dir, fps, arm_obj):
         
         bpy.context.scene.render.fps = fps
         bpy.context.scene.frame_start = 0
-        bpy.context.scene.frame_end = fps * length
+        bpy.context.scene.frame_end = round(fps * length)
 
         baseInfo = find(animElem, "baseinfo")
         if baseInfo:
