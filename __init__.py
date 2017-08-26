@@ -41,6 +41,7 @@ from .export_anim import write_skeleton
 from .export_mesh import (
     write_mesh_weapon,
     write_mesh_wardrobe, 
+    write_mesh_monster, 
     convert_to_mesh)
 
 class IMPORT_MESH_OT_tl2(Operator):
@@ -249,11 +250,7 @@ class EXPORT_MESH_OT_tl2weapon(Operator):
         return {'FINISHED'}
 
 
-class EXPORT_MESH_OT_tl2wardrobe(Operator):
-    bl_label = "Export Torchlight 2 Wardrobe MESH"
-    bl_idname = "export_mesh.tl2wardrobe"
-    bl_options = set()
-
+class Export_Skinned_Mesh_Base:
     filepath = StringProperty(name="XML output file", subtype="FILE_PATH")
     filename = StringProperty(name="File Name", default="", subtype="FILE_NAME")
     skeletonlink = StringProperty(name="skeletonlink", subtype="FILE_NAME")
@@ -268,11 +265,7 @@ class EXPORT_MESH_OT_tl2wardrobe(Operator):
 
     def invoke(self, context, event):
         obj = context.active_object
-        self.skeletonlink = obj.get(
-            "skeletonlink",
-            os.path.basename(context.scene.get('tl2_skel_file')) or 
-            obj.name + ".SKELETON"
-        )
+        self.skeletonlink = obj.get("skeletonlink", obj.name + ".SKELETON")
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
 
@@ -301,7 +294,7 @@ class EXPORT_MESH_OT_tl2wardrobe(Operator):
             self.filename.rsplit(".")[0] + "_EXPORT.xml")
 
         xml_stream = open(xml_output, "w")
-        write_mesh_wardrobe(
+        self.__class__._write_skinned_mesh(
             xml_stream,
             context.active_object.data,
             self.vgroups,
@@ -310,6 +303,20 @@ class EXPORT_MESH_OT_tl2wardrobe(Operator):
 
         convert_to_mesh(xml_output, mesh_output)
         return {'FINISHED'}
+
+
+class EXPORT_MESH_OT_tl2wardrobe(Export_Skinned_Mesh_Base, Operator):
+    bl_label = "Export Torchlight 2 Wardrobe MESH"
+    bl_idname = "export_mesh.tl2wardrobe"
+    bl_options = set()
+    _write_skinned_mesh = write_mesh_wardrobe
+
+
+class EXPORT_MESH_OT_tl2monster(Export_Skinned_Mesh_Base, Operator):
+    bl_label = "Export Torchlight 2 Monster MESH"
+    bl_idname = "export_mesh.tl2monster"
+    bl_options = set()
+    _write_skinned_mesh = write_mesh_monster
 
 
 class EXPORT_ANIM_OT_tl2anim(Operator):
@@ -525,6 +532,7 @@ class PROPERTIES_PT_import_tl2(Panel):
         col.operator("import_anim.tl2", "Import Animation")
         col.operator("export_mesh.tl2weapon",   "Export Weapon Mesh")
         col.operator("export_mesh.tl2wardrobe", "Export Wardrobe Mesh")
+        col.operator("export_mesh.tl2monster",  "Export Monster Mesh")
         col.operator("export_anim.tl2anim", "Export Animation")
         col.operator("material.tl2_assign_wardrobe_textures")
         col.operator("material.tl2_assign_body_textures")
@@ -567,6 +575,7 @@ def register():
     bpy.utils.register_class(IMPORT_ANIM_OT_tl2)
     bpy.utils.register_class(EXPORT_MESH_OT_tl2weapon)
     bpy.utils.register_class(EXPORT_MESH_OT_tl2wardrobe)
+    bpy.utils.register_class(EXPORT_MESH_OT_tl2monster)
     bpy.utils.register_class(EXPORT_ANIM_OT_tl2anim)
     bpy.utils.register_class(PROPERTIES_PT_import_tl2)
 
@@ -574,6 +583,7 @@ def unregister():
     bpy.utils.unregister_class(PROPERTIES_PT_import_tl2)
     bpy.utils.unregister_class(EXPORT_ANIM_OT_tl2anim)
     bpy.utils.unregister_class(EXPORT_MESH_OT_tl2weapon)
+    bpy.utils.unregister_class(EXPORT_MESH_OT_tl2monster)
     bpy.utils.unregister_class(EXPORT_MESH_OT_tl2wardrobe)
     bpy.utils.unregister_class(IMPORT_SCENE_OT_tl2_import_level_chunk)
     bpy.utils.unregister_class(SCENE_OT_tl2_set_skeleton_path)

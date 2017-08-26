@@ -126,7 +126,7 @@ def write_mesh_weapon(stream, mesh):
 	xml = XMLWriter(stream)
 
 	xml.tag_open("mesh")
-	write_shared_geometry(xml, mesh)
+	write_shared_geometry(xml, mesh, ((True, True, True),))
 	
 	xml.tag_open("submeshes")
 	write_submesh_weapon(xml, mesh)
@@ -153,9 +153,10 @@ def write_submesh_weapon(xml, mesh):
 	xml.tag_close("faces")
 	xml.tag_close("submesh")
 
-def write_shared_geometry(xml, mesh):
+def write_shared_geometry(xml, mesh, buffer_types):
 	xml.tag_open_format(SHARED_GEOMETRY, vertexcount=len(mesh.vertices))
-	write_vertex_buffer(xml, mesh, range(len(mesh.vertices)), (True, True, True))
+	for buf_type in buffer_types:
+		write_vertex_buffer(xml, mesh, range(len(mesh.vertices)), buf_type)
 	xml.tag_close("sharedgeometry")
 
 # =============================================================================
@@ -214,3 +215,52 @@ def write_submesh_wardrobe(xml, mesh, bones, mat_index):
 
 	xml.tag_close("submesh")
 	return len(vertex_indices)
+
+# =============================================================================
+# ----------------------------------MONSTER------------------------------------
+# =============================================================================
+
+def write_mesh_monster(stream, mesh, bones, skel_link):
+	xml = XMLWriter(stream)
+	xml.tag_open("mesh")
+	write_shared_geometry(xml, mesh, ((True,  True, False), (False, False, True)))
+
+	xml.tag_open("submeshes")
+	for mat_index in range(len(mesh.materials)):
+		write_submesh_monster(xml, mesh, mat_index)
+	xml.tag_close("submeshes")
+
+	xml.tag_format(SKELETONLINK, name=skel_link)
+
+	xml.tag_open("boneassignments")
+	for v in mesh.vertices:
+		for g in v.groups:
+			if g.group in bones:
+				xml.tag_format(BONE_ASSIGNMENT,
+					vertexindex=v.index,
+					boneindex=g.group,
+					weight=g.weight
+				)
+	xml.tag_close("boneassignments")
+
+	xml.tag_close("mesh")
+	xml.finish()
+
+def write_submesh_monster(xml, mesh, mat_index):
+	xml.tag_open_format(SUBMESH,
+		material=mesh.materials[mat_index].name,
+		shared_vertices="true",
+		use_32bit="false",
+		op_type="triangle_list"
+	)
+
+	xml.tag_open_format(FACES, facecount=len(mesh.polygons))
+	for poly in mesh.polygons:
+		indices = poly.vertices
+		if not len(indices) == 3:
+			raise ValueError("Polygon is not a triangle")
+		xml.tag_format(FACE, v1=indices[0], v2=indices[1], v3=indices[2])
+
+	xml.tag_close("faces")
+	xml.tag_format("<boneassignments />")
+	xml.tag_close("submesh")
