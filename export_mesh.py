@@ -38,9 +38,12 @@ class XMLWriter:
 	def finish(self):
 		self.file_object.close()
 
-	def tag_format(self, fmt, is_empty=True, **kwargs):
+	def tag_format(self, fmt, **kwargs):
 		self.file_object.write(4*self.indent_level*" " + fmt.format(**kwargs) + "\n")
-		if not is_empty: self.indent_level += 1
+
+	def tag_open_format(self, fmt, **kwargs):
+		self.tag_format(fmt, **kwargs)
+		self.indent_level += 1
 
 	def tag_compose(self, tag_name, attributes):
 		composed = " ".join(attributes)
@@ -73,13 +76,13 @@ def convert_to_mesh(xml_input, mesh_output, create_directory=False):
         output=mesh_output
         )) 
 
-def write_vertex_buffer(mesh, vertex_indices, flags, xml):
+def write_vertex_buffer(xml, mesh, vertex_indices, flags):
 	(data_position,
 	 data_normal,
 	 #...
 	 data_uv) = flags 
 
-	xml.tag_format(VERTEX_BUFFER, False,
+	xml.tag_open_format(VERTEX_BUFFER,
 		positions = "true" if data_position else "false",
 		normals   = "true" if data_normal   else "false",
 		tex_co    =      1 if data_uv       else       0,
@@ -99,16 +102,15 @@ def write_vertex_buffer(mesh, vertex_indices, flags, xml):
 			uv = uv_loop.uv.copy()
 			uv.y = 1.0 - uv.y
 		
-		write_vertex(
+		write_vertex(xml,
 			v.undeformed_co if data_position else None,
 			v.normal        if data_normal   else None, 
 			uv              if data_uv       else None,
-			xml
 		)
 
 	xml.tag_close("vertexbuffer")
 
-def write_vertex(co, n, uv, xml):
+def write_vertex(xml, co, n, uv):
 	xml.tag_open("vertex")
 	if co: xml.tag_format(POSITION, x=co.x, y=co.y, z=co.z)
 	if  n: xml.tag_format(NORMAL,   x= n.x, y= n.y, z= n.z)
@@ -119,28 +121,28 @@ def write_vertex(co, n, uv, xml):
 # -----------------------------------WEAPON------------------------------------
 # =============================================================================
 
-def write_mesh_weapon(mesh, xml_stream):
-	xml = XMLWriter(xml_stream)
+def write_mesh_weapon(stream, mesh):
+	xml = XMLWriter(stream)
 
 	xml.tag_open("mesh")
-	write_shared_geometry(mesh, xml)
+	write_shared_geometry(xml, mesh)
 	
 	xml.tag_open("submeshes")
-	write_submesh_weapon(mesh, xml)
+	write_submesh_weapon(xml, mesh)
 	xml.tag_close("submeshes")
 
 	xml.tag_close("mesh")
 	xml.finish()
 
-def write_submesh_weapon(mesh, xml):
-	xml.tag_format(SUBMESH, False,
+def write_submesh_weapon(xml, mesh):
+	xml.tag_open_format(SUBMESH,
 		material=mesh.materials[0].name,
 		shared_vertices="true",
 		use_32bit="false",
 		op_type="triangle_list"
 	)
 
-	xml.tag_format(FACES, False, facecount=len(mesh.polygons))
+	xml.tag_open_format(FACES, facecount=len(mesh.polygons))
 	for poly in mesh.polygons:
 		indices = poly.vertices
 		if not len(indices) == 3:
@@ -150,31 +152,31 @@ def write_submesh_weapon(mesh, xml):
 	xml.tag_close("faces")
 	xml.tag_close("submesh")
 
-def write_shared_geometry(mesh, xml):
-	xml.tag_format(SHARED_GEOMETRY, False, vertexcount=len(mesh.vertices))
-	write_vertex_buffer(mesh, range(len(mesh.vertices)), (True, True, True), xml)
+def write_shared_geometry(xml, mesh):
+	xml.tag_open_format(SHARED_GEOMETRY, vertexcount=len(mesh.vertices))
+	write_vertex_buffer(xml, mesh, range(len(mesh.vertices)), (True, True, True))
 	xml.tag_close("sharedgeometry")
 
 # =============================================================================
 # ---------------------------------WARDROBE------------------------------------
 # =============================================================================
 
-def write_mesh_wardrobe(mesh, bones, skel_link, xml_stream):
-	xml = XMLWriter(xml_stream)
+def write_mesh_wardrobe(stream, mesh, bones, skel_link):
+	xml = XMLWriter(stream)
 	xml.tag_open("mesh")
 	xml.tag_open("submeshes")
 
 	offset = 0
 	for mat_index in range(len(mesh.materials)):
-		offset += write_submesh_wardrobe(mesh, bones, mat_index, offset, xml)
+		offset += write_submesh_wardrobe(xml, mesh, bones, mat_index, offset)
 
 	xml.tag_close("submeshes")
-	xml.tag_format(SKELETONLINK.format(name=skel_link))
+	xml.tag_format(SKELETONLINK, name=skel_link)
 	xml.tag_close("mesh")
 	xml.finish()
 
-def write_submesh_wardrobe(mesh, bones, mat_index, offset, xml):
-	xml.tag_format(SUBMESH, False,
+def write_submesh_wardrobe(xml, mesh, bones, mat_index, offset):
+	xml.tag_open_format(SUBMESH,
 		material = mesh.materials[mat_index].name,
 		shared_vertices="false",
 		use_32bit="false",
@@ -186,15 +188,15 @@ def write_submesh_wardrobe(mesh, bones, mat_index, offset, xml):
 	vertex_indices = list(vertex_indices)
 	vertex_indices.sort()
 
-	xml.tag_format(FACES, False, facecount=len(polys))
+	xml.tag_open_format(FACES, facecount=len(polys))
 	for poly in polys:
 		indices = [i - offset for i in poly.vertices]
 		xml.tag_format(FACE, v1=indices[0], v2=indices[1], v3=indices[2])
 	xml.tag_close("faces")
 
-	xml.tag_format(GEOMETRY, False, vertexcount=len(vertex_indices))
-	write_vertex_buffer(mesh, vertex_indices, (True,  True,  False), xml)
-	write_vertex_buffer(mesh, vertex_indices, (False, False, True ), xml)
+	xml.tag_open_format(GEOMETRY, vertexcount=len(vertex_indices))
+	write_vertex_buffer(xml, mesh, vertex_indices, (True,  True,  False))
+	write_vertex_buffer(xml, mesh, vertex_indices, (False, False, True ))
 	xml.tag_close("geometry")
 
 	xml.tag_open("boneassignments")

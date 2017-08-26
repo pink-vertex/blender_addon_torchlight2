@@ -141,11 +141,6 @@ class IMPORT_ANIM_OT_tl2(Operator):
         name="Armature Object"
         )
 
-    missing_channels = BoolProperty(
-        name="Insert Keyframes for PoseBones without Data",
-        default=False
-        )
-
     @classmethod
     def poll(cls, context):
         return (context.active_object and 
@@ -249,7 +244,7 @@ class EXPORT_MESH_OT_tl2weapon(Operator):
             self.filename.rsplit(".")[0] + "_EXPORT.XML")
 
         xml_stream = open(xml_output, "w")
-        write_mesh_weapon(mesh_export, xml_stream)
+        write_mesh_weapon(xml_stream, mesh_export)
         bpy.data.meshes.remove(mesh_export)
         convert_to_mesh(xml_output, mesh_output)
         return {'FINISHED'}
@@ -304,10 +299,10 @@ class EXPORT_MESH_OT_tl2wardrobe(Operator):
 
         xml_stream = open(xml_output, "w")
         write_mesh_wardrobe(
+            xml_stream,
             context.active_object.data,
             self.vgroups,
-            self.skeletonlink,
-            xml_stream
+            self.skeletonlink
         )
 
         convert_to_mesh(xml_output, mesh_output)

@@ -258,10 +258,3 @@ def write_keyframe(xml, time, loc, rot):
     xml.tag_format(AXIS, x=axis.x, y=axis.y, z=axis.z)
     xml.tag_close("rotate")
     xml.tag_close("keyframe")
-
-def test(bp=False):
-    ob = bpy.context.active_object
-    xml_output = "/home/thorsten/Dokumente/Blender/tl2_xml/test_export_anim.xml"
-    with open(xml_output, "w") as stream:
-        xml = XMLWriter(stream)
-        write_skeleton(xml, ob, bp)
