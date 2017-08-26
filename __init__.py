@@ -236,16 +236,15 @@ class EXPORT_MESH_OT_tl2weapon(Operator):
 
     def execute(self, context):
         mesh = context.active_object.data
-        mesh_export = process_for_export(mesh)
+        mesh_export = process_for_export(mesh, False)
 
         mesh_output = self.filepath
         xml_output = os.path.join(
             get_addon_pref(context).xml_output,
-            self.filename.rsplit(".")[0] + "_EXPORT.XML")
+            self.filename.rsplit(".")[0] + "_EXPORT.xml")
 
         xml_stream = open(xml_output, "w")
         write_mesh_weapon(xml_stream, mesh_export)
-        bpy.data.meshes.remove(mesh_export)
         convert_to_mesh(xml_output, mesh_output)
         return {'FINISHED'}
 
@@ -295,7 +294,7 @@ class EXPORT_MESH_OT_tl2wardrobe(Operator):
         mesh_output = self.filepath
         xml_output = os.path.join(
             get_addon_pref(context).xml_output,
-            self.filename.rsplit(".")[0] + "_EXPORT.XML")
+            self.filename.rsplit(".")[0] + "_EXPORT.xml")
 
         xml_stream = open(xml_output, "w")
         write_mesh_wardrobe(
