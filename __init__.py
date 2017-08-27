@@ -326,7 +326,7 @@ class EXPORT_ANIM_OT_tl2anim(Operator):
 
     filepath = StringProperty(name="SKELETON output file", subtype="FILE_PATH")
     filename = StringProperty(name="File Name", default="", subtype="FILE_NAME")
-    bind_pose = BoolProperty(name="Bind Pose", default=False)
+    bind_pose = BoolProperty(name="Bind Pose", default=False, options={'SKIP_SAVE'})
 
     @classmethod
     def poll(cls, context):
@@ -581,16 +581,16 @@ def register():
 
 def unregister():
     bpy.utils.unregister_class(PROPERTIES_PT_import_tl2)
-    bpy.utils.unregister_class(EXPORT_ANIM_OT_tl2anim)
-    bpy.utils.unregister_class(EXPORT_MESH_OT_tl2weapon)
-    bpy.utils.unregister_class(EXPORT_MESH_OT_tl2monster)
-    bpy.utils.unregister_class(EXPORT_MESH_OT_tl2wardrobe)
-    bpy.utils.unregister_class(IMPORT_SCENE_OT_tl2_import_level_chunk)
-    bpy.utils.unregister_class(SCENE_OT_tl2_set_skeleton_path)
-    bpy.utils.unregister_class(MATERIAL_OT_tl2_assign_body_textures)
-    bpy.utils.unregister_class(MATERIAL_OT_tl2_assign_wardrobe_textures)
     bpy.utils.unregister_class(IMPORT_MESH_OT_tl2)
+    bpy.utils.unregister_class(MATERIAL_OT_tl2_assign_wardrobe_textures)
+    bpy.utils.unregister_class(MATERIAL_OT_tl2_assign_body_textures)
+    bpy.utils.unregister_class(SCENE_OT_tl2_set_skeleton_path)
+    bpy.utils.unregister_class(IMPORT_SCENE_OT_tl2_import_level_chunk)
     bpy.utils.unregister_class(IMPORT_ANIM_OT_tl2)
+    bpy.utils.unregister_class(EXPORT_MESH_OT_tl2weapon)
+    bpy.utils.unregister_class(EXPORT_MESH_OT_tl2wardrobe)
+    bpy.utils.unregister_class(EXPORT_MESH_OT_tl2monster)
+    bpy.utils.unregister_class(EXPORT_ANIM_OT_tl2anim)
     bpy.utils.unregister_class(Torchlight2Preferences)
 
     del Scene.tl2_mesh_file
