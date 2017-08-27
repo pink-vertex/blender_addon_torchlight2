@@ -42,25 +42,56 @@ def getFloatAttr(domElem, attr):
 def getVecAttr(domElem, attributes):
     return (getFloatAttr(domElem, attr) for attr in attributes)
 
-def convert_to_xml(file_input, xml_output, create_directory=False):
-    if not os.path.exists(xml_output):
-        if not os.path.exists(file_input):
-            raise FileNotFoundError(file_input)
+def convert_to_xml(file_input, xml_output, create_directory=False, overwrite=False):
+    if os.path.exists(xml_output) and not overwrite:
+        return
 
-        xml_directory = os.path.dirname(xml_output)
-        if not os.path.exists(xml_directory):
-            if create_directory:
-                os.makedirs(xml_directory)
-            else:
-                raise FileNotFoundError(os.path.dirname(xml_directory))
-        
-        ogre_xml_converter = get_addon_pref(bpy.context).ogre_xml_converter
-        cmd = '{converter:s} "{input:s}" "{output:s}"'
-        os.system(cmd.format(
-            converter=ogre_xml_converter,
-            input=file_input,
-            output=xml_output
-            )) 
+    if not os.path.exists(file_input):
+        raise FileNotFoundError(file_input)
+
+    xml_directory = os.path.dirname(xml_output)
+    if not os.path.exists(xml_directory):
+        if create_directory:
+            os.makedirs(xml_directory)
+        else:
+            raise FileNotFoundError(os.path.dirname(xml_directory))
+
+    ogre_xml_converter = get_addon_pref(bpy.context).ogre_xml_converter
+    cmd = '{converter:s} "{input:s}" "{output:s}"'
+    os.system(cmd.format(
+        converter=ogre_xml_converter,
+        input=file_input,
+        output=xml_output
+        ))
+
+
+class XMLWriter:
+	def __init__(self, file_object):
+		self.file_object = file_object
+		self.indent_level = 0
+
+	def finish(self):
+		self.file_object.close()
+
+	def tag_format(self, fmt, **kwargs):
+		self.file_object.write(4*self.indent_level*" " + fmt.format(**kwargs) + "\n")
+
+	def tag_open_format(self, fmt, **kwargs):
+		self.tag_format(fmt, **kwargs)
+		self.indent_level += 1
+
+	def tag_compose(self, tag_name, attributes):
+		composed = " ".join(attributes)
+		self.file_object.write(4*self.indent_level*" " + composed + " >\n")
+
+	def tag_open(self, tag_name):
+		self.file_object.write(4*self.indent_level*" " + "<%s>\n" % tag_name)
+		self.indent_level +=1
+
+	def tag_close(self, tag_name):
+		self.indent_level -= 1
+		self.file_object.write(4*self.indent_level*" " + "</%s>\n" % tag_name)
+
 
 #----------------------------------------------------------------------------------------
 

@@ -1,4 +1,4 @@
-from .utils import os, bpy, get_addon_pref
+from .utils import os, bpy, XMLWriter, get_addon_pref
 
 # CMD_EXPORT = "{converter:s} -l 0 -e -r {input:s} {output:s}"
 CMD_EXPORT = "{converter:s} {input:s} {output:s}"
@@ -30,34 +30,6 @@ BONE_ASSIGNMENT = ("<vertexboneassignment "
 	     "weight=\"{weight:g}\" />")
 
 SKELETONLINK = "<skeletonlink name=\"{name:s}\" />"
-
-class XMLWriter:
-	def __init__(self, file_object):
-		self.file_object = file_object
-		self.indent_level = 0
-
-	def finish(self):
-		self.file_object.close()
-
-	def tag_format(self, fmt, **kwargs):
-		self.file_object.write(4*self.indent_level*" " + fmt.format(**kwargs) + "\n")
-
-	def tag_open_format(self, fmt, **kwargs):
-		self.tag_format(fmt, **kwargs)
-		self.indent_level += 1
-
-	def tag_compose(self, tag_name, attributes):
-		composed = " ".join(attributes)
-		self.file_object.write(4*self.indent_level*" " + composed + " >\n")
-
-	def tag_open(self, tag_name):
-		self.file_object.write(4*self.indent_level*" " + "<%s>\n" % tag_name)
-		self.indent_level +=1
-
-	def tag_close(self, tag_name):
-		self.indent_level -= 1
-		self.file_object.write(4*self.indent_level*" " + "</%s>\n" % tag_name)
-
 
 def convert_to_mesh(xml_input, mesh_output, create_directory=False):
     if not os.path.exists(xml_input):
@@ -169,7 +141,7 @@ def write_mesh_wardrobe(stream, mesh, vgi_to_bi, skel_link):
 	xml.tag_open("submeshes")
 
 	for mat_index in range(len(mesh.materials)):
-		write_submesh_wardrobe(xml, mesh, bones, mat_index)
+		write_submesh_wardrobe(xml, mesh, vgi_to_bi, mat_index)
 
 	xml.tag_close("submeshes")
 	xml.tag_format(SKELETONLINK, name=skel_link)
