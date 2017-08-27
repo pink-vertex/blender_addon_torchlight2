@@ -419,15 +419,6 @@ class MeshConverter(object):
                 for vi, bi, weight in self.boneassignments:
                     if bi < bone_count:
                         vertex_groups[bi].add((vi,), weight, "ADD")
- 
-        for sm in self.submeshes:
-            if sm.vertices:
-                vg = obj.vertex_groups.new(sm.material)
-                vg.add(
-                    tuple(v.index for v in sm.vertices), 
-                    1.0, 
-                    "ADD"
-                )
                
         bpy.context.scene.objects.link(obj)     
         return obj, mesh
