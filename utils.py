@@ -42,7 +42,7 @@ def getFloatAttr(domElem, attr):
 def getVecAttr(domElem, attributes):
     return (getFloatAttr(domElem, attr) for attr in attributes)
 
-def convert_to_xml(file_input, xml_output, create_directory=False, overwrite=False):
+def convert_to_xml(file_input, xml_output, create_directory=False, overwrite=True):
     if os.path.exists(xml_output) and not overwrite:
         return
 

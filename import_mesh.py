@@ -140,7 +140,7 @@ class Submesh(object):
 
     
 class MeshConverter(object):
-    def __init__(self, mesh_input, xml_dir, skel_input=None, mat_file=None):
+    def __init__(self, mesh_input, xml_dir, skel_input=None, mat_file=None, use_existing_xml=False):
         #==========================================================================================
         #-----------------------------------CONVERT TO XML-----------------------------------------
         #==========================================================================================
@@ -148,7 +148,7 @@ class MeshConverter(object):
         self.stem = os.path.basename(mesh_input).rsplit(".")[0]
         xml_output = os.path.join(xml_dir, self.stem + "_mesh.xml")
         
-        convert_to_xml(mesh_input, xml_output)
+        convert_to_xml(mesh_input, xml_output, overwrite=not use_existing_xml)
         meshElem = xml.dom.minidom.parse(xml_output).documentElement
 
         #==========================================================================================
@@ -161,7 +161,7 @@ class MeshConverter(object):
             skel_input = skel_input or os.path.join(os.path.dirname(mesh_input), self.skeletonlink.upper())
             xml_output = os.path.join(xml_dir, os.path.basename(skel_input).rsplit('.')[0] + "_skel.xml")   
             
-            convert_to_xml(skel_input, xml_output)
+            convert_to_xml(skel_input, xml_output, overwrite=not use_existing_xml)
             
             self.bones = deque()
             self.bone_dict = dict()

@@ -347,8 +347,9 @@ def load_level_chunk(xml_path, tl2_path, chunk_file, parent=None, layout_group=N
 			try:
 				conv = MeshConverter(
 					mesh_input=mesh_input,
-					xml_dir=xml_path
+					xml_dir=xml_path,
 					# mat_input=mat_input
+                    use_existing_xml=True
 					)
 			except FileNotFoundError:
 				print(mesh_input, "not found")
