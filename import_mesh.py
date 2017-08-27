@@ -157,8 +157,8 @@ class MeshConverter(object):
         
         sklLinkElem = find(meshElem, "skeletonlink")
         if sklLinkElem:
-            self.skeletonlink = sklLinkElem.getAttribute("name").upper()
-            skel_input = skel_input or os.path.join(os.path.dirname(mesh_input), self.skeletonlink)
+            self.skeletonlink = sklLinkElem.getAttribute("name")
+            skel_input = skel_input or os.path.join(os.path.dirname(mesh_input), self.skeletonlink.upper())
             xml_output = os.path.join(xml_dir, os.path.basename(skel_input).rsplit('.')[0] + "_skel.xml")   
             
             convert_to_xml(skel_input, xml_output)
@@ -249,7 +249,7 @@ class MeshConverter(object):
                 for mat_file in mat_files:
                     self.read_material(mat_file)
             else:
-                print("No Material found:", mat_input)
+                print("No *.MATERIAL Files found")
                 self.tex_links = None
 
     def read_material(self, mat_file):

@@ -84,7 +84,9 @@ class TL2_MaterialLib:
 
 		files = set()
 		for mat_name in mat_names:
-			value = self.mat_dict[mat_name]
+			value = self.mat_dict.get(mat_name)
+			if value is None:
+				continue
 			if isinstance(value, list):
 				value = self.choose_mat(mesh_input, mat_name, value)
 			files.add(value)
