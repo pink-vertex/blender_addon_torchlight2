@@ -554,11 +554,20 @@ class Torchlight2Preferences(AddonPreferences):
     tl2_media_dir = StringProperty(name="Torchlight 2 Media Directory", subtype="DIR_PATH") 
     ogre_xml_converter = StringProperty(name="Ogre XML Converter", subtype="FILE_PATH")
     xml_output = StringProperty(name="XML Output Directory", subtype="DIR_PATH")
+    use_cmd_args = BoolProperty(name="Use Command Line Arguments", default=True)
+    cmd_args_mesh_export = StringProperty(
+        name="Command Line Arguments",
+        description="Command Line Arguments to OgreXMLConverter.exe (1.7.2) for Mesh Export",
+        default="-l 0 -e -r"
+    )
 
     def draw(self, context):
         self.layout.prop(self, "tl2_media_dir")
         self.layout.prop(self, "ogre_xml_converter")
         self.layout.prop(self, "xml_output")
+        self.layout.prop(self, "use_cmd_args")
+        if self.use_cmd_args:
+            self.layout.prop(self, "cmd_args_mesh_export")
 
 
 def register():

@@ -1,7 +1,6 @@
 from .utils import os, bpy, XMLWriter, get_addon_pref
 
-# CMD_EXPORT = "{converter:s} -l 0 -e -r {input:s} {output:s}"
-CMD_EXPORT = "{converter:s} {input:s} {output:s}"
+CMD_EXPORT = '{converter:s} {args:s} "{input:s}" "{output:s}"'
 SHARED_GEOMETRY = "<sharedgeometry vertexcount=\"{vertexcount:d}\">"
 
 VB_POSITION = "positions=\"{positions:s}\" "
@@ -42,9 +41,12 @@ def convert_to_mesh(xml_input, mesh_output, create_directory=False):
         else:
             raise FileNotFoundError(os.path.dirname(mesh_directory))
     
-    ogre_xml_converter = get_addon_pref(bpy.context).ogre_xml_converter
+    pref = get_addon_pref(bpy.context)
+    args = pref.cmd_args_mesh_export if pref.use_cmd_args else ""
+    ogre_xml_converter = pref.ogre_xml_converter
     os.system(CMD_EXPORT.format(
         converter=ogre_xml_converter,
+        args=args,
         input=xml_input,
         output=mesh_output
         )) 
