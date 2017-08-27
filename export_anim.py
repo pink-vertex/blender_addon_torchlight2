@@ -2,6 +2,8 @@ import re
 import bpy
 from mathutils import Vector, Quaternion, Matrix
 
+from .utils import get_bone_order
+
 SKELETON = '<skeleton blendmode="average">'
 BONE = '<bone id="{id:d}" name="{name:s}">'
 POSITION = '<position x="{x:g}" y="{y:g}" z="{z:g}" />'
@@ -107,10 +109,7 @@ def write_skeleton(stream, ob, bind_pose=False):
     xml = XMLWriter(stream)
     am = ob.data
 
-    bone_order = am.get('tl2_id')
-    if bone_order is None:
-        bone_order = gen_bone_order(am)
-
+    bone_order = get_bone_order(am)
     bones = tuple(am.bones[name] for name in bone_order)
 
     if not bind_pose:
@@ -177,14 +176,6 @@ def collect_anm_data(action, armature, bone_names):
 
     return anm_data
 
-def is_root(bone): return bone.parent is None
-def gen_bone_order(armature):
-    result = []
-    for root in filter(is_root, armature.bones):
-        result.append(root.name)
-        result.extend(child.name for child in root.children_recursive)
-    return result
- 
 def calc_rest(bone):
     has_parent = bone.parent is not None
     if not has_parent:

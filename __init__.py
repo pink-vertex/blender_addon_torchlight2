@@ -36,7 +36,7 @@ from bpy.props import (BoolProperty, FloatProperty, FloatVectorProperty, IntProp
 from .import_mesh import MeshConverter
 from .import_anim import load_animation
 from .import_level_chunk import load_level_chunk
-from .utils import get_addon_pref, convert_to_xml
+from .utils import get_addon_pref, convert_to_xml, get_bone_order
 from .export_anim import write_skeleton
 from .export_mesh import (
     write_mesh_weapon,
@@ -242,7 +242,7 @@ class EXPORT_MESH_OT_tl2weapon(Operator):
         mesh_output = self.filepath
         xml_output = os.path.join(
             get_addon_pref(context).xml_output,
-            self.filename.rsplit(".")[0] + "_EXPORT.xml")
+            self.filename.rsplit(".")[0] + "_EXPORT_MESH.xml")
 
         xml_stream = open(xml_output, "w")
         write_mesh_weapon(xml_stream, mesh_export)
@@ -254,7 +254,6 @@ class Export_Skinned_Mesh_Base:
     filepath = StringProperty(name="XML output file", subtype="FILE_PATH")
     filename = StringProperty(name="File Name", default="", subtype="FILE_NAME")
     skeletonlink = StringProperty(name="skeletonlink", subtype="FILE_NAME")
-    bone_name_prefix = StringProperty(name="Bone Name Prefix")
 
     @classmethod
     def poll(cls, context):
@@ -265,39 +264,40 @@ class Export_Skinned_Mesh_Base:
 
     def invoke(self, context, event):
         obj = context.active_object
-        self.skeletonlink = obj.get("skeletonlink", obj.name + ".SKELETON")
+        self.skeletonlink = obj.get("skeletonlink", obj.name + ".skeleton")
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
 
     def execute(self, context):
         obj = context.active_object
-        process_for_export(obj.data, False)
 
         if (len(obj.modifiers) > 0 and 
             obj.modifiers[0].type == "ARMATURE" and
             obj.modifiers[0].object):
 
+            def list_index(l, i):
+                try:               return l.index(i)
+                except ValueError: return -1
+
             arma_obj = obj.modifiers[0].object
-            bone_names = [bone.name for bone in arma_obj.data.bones]
-            self.vgroups = [vg.index for vg in obj.vertex_groups if vg.name in bone_names]
-        
-        elif self.bone_name_prefix:
-            self.vgroups = [
-                vg.index for vg in obj.vertex_groups 
-                        if vg.name.startswith(self.bone_name_prefix)]
+            bone_order = get_bone_order(arma_obj.data)
+            vgi_to_bi = {vg.index: list_index(bone_order, vg.name) for vg in obj.vertex_groups} # might use list instead of dict if order is guaranteed
         else:
-            self.vgroups = tuple(range(len(obj.vertex_groups)))
+            self.report({'ERROR'}, "No Armature Modifier Found")        
+            return {'CANCELLED'}
+
+        process_for_export(obj.data, False)
 
         mesh_output = self.filepath
         xml_output = os.path.join(
             get_addon_pref(context).xml_output,
-            self.filename.rsplit(".")[0] + "_EXPORT.xml")
+            self.filename.rsplit(".")[0] + "_EXPORT_MESH.xml")
 
         xml_stream = open(xml_output, "w")
         self.__class__._write_skinned_mesh(
             xml_stream,
-            context.active_object.data,
-            self.vgroups,
+            obj.data,
+            vgi_to_bi,
             self.skeletonlink
         )
 
@@ -346,7 +346,7 @@ class EXPORT_ANIM_OT_tl2anim(Operator):
         skel_output = self.filepath
         xml_output = os.path.join(
             get_addon_pref(context).xml_output,
-            self.filename.rsplit(".")[0] + "_EXPORT.xml")
+            self.filename.rsplit(".")[0] + "_EXPORT_ANM.xml")
 
         xml_stream = open(xml_output, "w")
         write_skeleton(xml_stream, obj, self.bind_pose)

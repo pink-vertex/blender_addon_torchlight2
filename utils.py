@@ -92,6 +92,19 @@ class Bone(object):
                 else:
                     self.scale = Vector(getVecAttr(elem, "xyz"))
 
+def get_bone_order(armature):
+    try:             return armature['tl2_id']
+    except KeyError: return gen_bone_order(armature)
+
+def is_root(bone): return bone.parent is None
+def gen_bone_order(armature):
+    result = []
+    for root in filter(is_root, armature.bones):
+        result.append(root.name)
+        result.extend(child.name for child in root.children_recursive)
+    return result
+
+#----------------------------------------------------------------------------------------
 
 def clear_scene_objects():
     objects_data  = bpy.data.objects

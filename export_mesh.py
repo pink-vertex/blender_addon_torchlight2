@@ -163,7 +163,7 @@ def write_shared_geometry(xml, mesh, buffer_types):
 # ---------------------------------WARDROBE------------------------------------
 # =============================================================================
 
-def write_mesh_wardrobe(stream, mesh, bones, skel_link):
+def write_mesh_wardrobe(stream, mesh, vgi_to_bi, skel_link):
 	xml = XMLWriter(stream)
 	xml.tag_open("mesh")
 	xml.tag_open("submeshes")
@@ -176,7 +176,7 @@ def write_mesh_wardrobe(stream, mesh, bones, skel_link):
 	xml.tag_close("mesh")
 	xml.finish()
 
-def write_submesh_wardrobe(xml, mesh, bones, mat_index):
+def write_submesh_wardrobe(xml, mesh, vgi_to_bi, mat_index):
 	xml.tag_open_format(SUBMESH,
 		material = mesh.materials[mat_index].name,
 		shared_vertices="false",
@@ -201,26 +201,30 @@ def write_submesh_wardrobe(xml, mesh, bones, mat_index):
 	write_vertex_buffer(xml, mesh, vertex_indices, (False, False, True ))
 	xml.tag_close("geometry")
 
+	write_boneassignments(xml, mesh, vertex_indices, vgi_to_bi)
+
+	xml.tag_close("submesh")
+	return len(vertex_indices)
+
+def write_boneassignments(xml, mesh, vertex_indices, vgi_to_bi):
 	xml.tag_open("boneassignments")
 	for smi, mvi in enumerate(vertex_indices):
 		v = mesh.vertices[mvi]
 		for g in v.groups:
-			if g.group in bones:
+			bi = vgi_to_bi[g.group]
+			if bi >= 0:
 				xml.tag_format(BONE_ASSIGNMENT, 
 					vertexindex=smi,
-					boneindex=g.group,
+					boneindex=bi,
 					weight=g.weight
 				) 		
 	xml.tag_close("boneassignments")
-
-	xml.tag_close("submesh")
-	return len(vertex_indices)
 
 # =============================================================================
 # ----------------------------------MONSTER------------------------------------
 # =============================================================================
 
-def write_mesh_monster(stream, mesh, bones, skel_link):
+def write_mesh_monster(stream, mesh, vgi_to_bi, skel_link):
 	xml = XMLWriter(stream)
 	xml.tag_open("mesh")
 	write_shared_geometry(xml, mesh, ((True,  True, False), (False, False, True)))
@@ -231,17 +235,8 @@ def write_mesh_monster(stream, mesh, bones, skel_link):
 	xml.tag_close("submeshes")
 
 	xml.tag_format(SKELETONLINK, name=skel_link)
-
-	xml.tag_open("boneassignments")
-	for v in mesh.vertices:
-		for g in v.groups:
-			if g.group in bones:
-				xml.tag_format(BONE_ASSIGNMENT,
-					vertexindex=v.index,
-					boneindex=g.group,
-					weight=g.weight
-				)
-	xml.tag_close("boneassignments")
+    
+	write_boneassignments(xml, mesh, tuple(range(len(mesh.vertices))), vgi_to_bi)
 
 	xml.tag_close("mesh")
 	xml.finish()
