@@ -76,6 +76,12 @@ MAT3_ROT_INV = Matrix((
     ( 1,  0,  0),
     ( 0,  0,  1)
 ))
+MAT_ROT_Y90_INV = Matrix((
+    ( 0.0,  0.0, -1.0,  0.0),
+    ( 0.0,  1.0,  0.0,  0.0),
+    ( 1.0,  0.0,  0.0,  0.0),
+    ( 0.0,  0.0,  0.0,  1.0),
+))
 
 def write_skeleton(stream, ob, bind_pose=False):
     xml = XMLWriter(stream)
@@ -173,14 +179,13 @@ def calc_keyframe(bone, loc, rot):
     mat_basis = rot.to_matrix().to_4x4()
     mat_basis.translation = loc
 
-    if not bone.parent:
-        # TODO: check this
-        return ZERO, QUAT_ID
-
-    mat_offset = bone.matrix.to_4x4()
-    mat_offset.translation = bone.head
-    mat_offset.translation.y += bone.parent.length
-    mat_basis = mat_offset * mat_basis   
+    if bone.parent is not None:
+        mat_offset = bone.matrix.to_4x4()
+        mat_offset.translation = bone.head
+        mat_offset.translation.y += bone.parent.length
+        mat_basis = mat_offset * mat_basis   
+    else:
+        mat_basis = MAT_ROT_Y90_INV * mat_basis
 
     mat_basis = MAT4_ROT * mat_basis * MAT4_ROT_INV
     loc, rot, scale = mat_basis.decompose()

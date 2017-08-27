@@ -55,6 +55,12 @@ def create_bones_animation(name, bone_list, trackElements, fps, obj):
         ( 0.0,  0.0,  1.0,  0.0),
         ( 0.0,  0.0,  0.0,  1.0),
     ))
+    MAT_ROT_Y90 = Matrix((
+        ( 0.0,  0.0,  1.0,  0.0),
+        ( 0.0,  1.0,  0.0,  0.0),
+        (-1.0,  0.0,  0.0,  0.0),
+        ( 0.0,  0.0,  0.0,  1.0),
+    ))
 
     def calcKeyframeData(pose_bone, loc, quat):
         mat_basis = quat.to_matrix().to_4x4()
@@ -69,8 +75,7 @@ def create_bones_animation(name, bone_list, trackElements, fps, obj):
             mat_offset_inv = mat_offset.inverted()
             mat_basis = mat_offset_inv *  mat_basis   
         else:
-            # TODO correctly convert root bones
-            return ZERO, QUAT_ID
+            mat_basis = MAT_ROT_Y90 * mat_basis
 
         return mat_basis.translation, mat_basis.to_quaternion()
 
