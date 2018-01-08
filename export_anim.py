@@ -31,8 +31,8 @@ class AnimData:
 
     def do_skip(self):
         return not all(self.loc) and not all(self.rot)
-         
-    def __iter__(self): 
+
+    def __iter__(self):
         iter_loc = tuple(iter(fcu.keyframe_points) for fcu in self.loc)
         iter_rot = tuple(iter(fcu.keyframe_points) for fcu in self.rot)
         return zip(*iter_loc, *iter_rot)
@@ -45,9 +45,9 @@ skeleton
             rotation
                 axis
     bonehierarchy
-        boneparent 
+        boneparent
     animations
-        animation 
+        animation
             tracks
                 track
                     keyframes
@@ -72,7 +72,7 @@ MAT4_ROT_INV = Matrix((
     ( 0.0,  0.0,  0.0,  1.0),
 ))
 MAT3_ROT_INV = Matrix((
-    ( 0, -1,  0), 
+    ( 0, -1,  0),
     ( 1,  0,  0),
     ( 0,  0,  1)
 ))
@@ -92,7 +92,7 @@ def write_skeleton(stream, ob, bind_pose=False):
 
     if not bind_pose:
         action = ob.animation_data.action
-        anm_data = collect_anm_data(action, am, bone_order) 
+        anm_data = collect_anm_data(action, am, bone_order)
 
     xml.tag_open_format(SKELETON)
     xml.tag_open("bones")
@@ -162,7 +162,7 @@ def calc_rest(bone):
     else:
         mat = bone.parent.matrix_local.inverted() * bone.matrix_local
         mat = MAT4_ROT * mat * MAT4_ROT_INV
-        loc, rot, scale = mat.decompose() 
+        loc, rot, scale = mat.decompose()
 
     return loc, rot
 
@@ -170,8 +170,8 @@ def write_bone(xml, name, bid, loc, rot):
     axis, angle = rot.to_axis_angle()
     xml.tag_open_format(BONE, name=name, id=bid)
     xml.tag_format(POSITION, x=loc.x, y=loc.y, z=loc.z)
-    xml.tag_open_format(ROTATION, angle=angle) 
-    xml.tag_format(AXIS, x=axis.x, y=axis.y, z=axis.z) 
+    xml.tag_open_format(ROTATION, angle=angle)
+    xml.tag_format(AXIS, x=axis.x, y=axis.y, z=axis.z)
     xml.tag_close("rotation")
     xml.tag_close("bone")
 
@@ -183,14 +183,14 @@ def calc_keyframe(bone, loc, rot):
         mat_offset = bone.matrix.to_4x4()
         mat_offset.translation = bone.head
         mat_offset.translation.y += bone.parent.length
-        mat_basis = mat_offset * mat_basis   
+        mat_basis = mat_offset * mat_basis
     else:
         mat_basis = MAT_ROT_Y90_INV * mat_basis
 
     mat_basis = MAT4_ROT * mat_basis * MAT4_ROT_INV
     loc, rot, scale = mat_basis.decompose()
     return loc, rot
-    
+
 def is_same_time(kfp):
     return all(abs(kfp[0].co.x - kfp[i].co.x) < 5e-4 for i in range(1, 7))
 

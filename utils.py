@@ -16,7 +16,7 @@ def child_iter(node, tagName=None):
         if (isinstance(childNode, xml.dom.minidom.Element) and
            (not tagName or tagName == childNode.tagName)):
             yield childNode
-            
+
     raise StopIteration
 
 def find(node, tagName=None):
@@ -28,7 +28,7 @@ def find(node, tagName=None):
 
 def children_count(node, tagName=None):
     return sum(1 for childElem in child_iter(node, tagName))
-    
+
 def getIntAttr(domElem, attr):
     if not (isinstance(domElem, xml.dom.minidom.Element)):
         raise ValueError("Could not get attribute %s - not a DomElement, %s" % (attr, type(domElem)))
@@ -66,36 +66,36 @@ def convert_to_xml(file_input, xml_output, create_directory=False, overwrite=Tru
 
 
 class XMLWriter:
-	def __init__(self, file_object):
-		self.file_object = file_object
-		self.indent_level = 0
+    def __init__(self, file_object):
+        self.file_object = file_object
+        self.indent_level = 0
 
-	def finish(self):
-		self.file_object.close()
+    def finish(self):
+        self.file_object.close()
 
-	def tag_format(self, fmt, **kwargs):
-		self.file_object.write(4*self.indent_level*" " + fmt.format(**kwargs) + "\n")
+    def tag_format(self, fmt, **kwargs):
+        self.file_object.write(4*self.indent_level*" " + fmt.format(**kwargs) + "\n")
 
-	def tag_open_format(self, fmt, **kwargs):
-		self.tag_format(fmt, **kwargs)
-		self.indent_level += 1
+    def tag_open_format(self, fmt, **kwargs):
+        self.tag_format(fmt, **kwargs)
+        self.indent_level += 1
 
-	def tag_compose(self, tag_name, attributes):
-		composed = " ".join(attributes)
-		self.file_object.write(4*self.indent_level*" " + composed + " >\n")
+    def tag_compose(self, tag_name, attributes):
+        composed = " ".join(attributes)
+        self.file_object.write(4*self.indent_level*" " + composed + " >\n")
 
-	def tag_open(self, tag_name):
-		self.file_object.write(4*self.indent_level*" " + "<%s>\n" % tag_name)
-		self.indent_level +=1
+    def tag_open(self, tag_name):
+        self.file_object.write(4*self.indent_level*" " + "<%s>\n" % tag_name)
+        self.indent_level +=1
 
-	def tag_close(self, tag_name):
-		self.indent_level -= 1
-		self.file_object.write(4*self.indent_level*" " + "</%s>\n" % tag_name)
+    def tag_close(self, tag_name):
+        self.indent_level -= 1
+        self.file_object.write(4*self.indent_level*" " + "</%s>\n" % tag_name)
 
 
 #----------------------------------------------------------------------------------------
 
-class Bone(object): 
+class Bone(object):
     __slots__ = ("id",  "name", "parent", "children", "children_count",
                  "position", "rotation", "scale")
 
@@ -108,15 +108,15 @@ class Bone(object):
         self.scale = Vector((1.0, 1.0, 1.0))
 
         for elem in child_iter(domElem):
-            if elem.tagName == "position": 
+            if elem.tagName == "position":
                 self.position = Vector(getVecAttr(elem, "xyz"))
-                        
-            elif elem.tagName == "rotation": 
+
+            elif elem.tagName == "rotation":
                 angle = getFloatAttr(elem, "angle")
                 axisElem = find(elem, "axis")
                 axis = tuple(getVecAttr(axisElem, "xyz"))
                 self.rotation = Quaternion(axis, angle)
-                
+
             elif elem.tagName == "scale":
                 if elem.hasAttribute("factor"):
                     self.scale = Vector(getFloatAttr(elem, "factor") for i in range(3))

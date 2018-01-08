@@ -40,8 +40,8 @@ from .utils import get_addon_pref, convert_to_xml, get_bone_order
 from .export_anim import write_skeleton
 from .export_mesh import (
     write_mesh_weapon,
-    write_mesh_wardrobe, 
-    write_mesh_monster, 
+    write_mesh_wardrobe,
+    write_mesh_monster,
     convert_to_mesh)
 
 class IMPORT_MESH_OT_tl2(Operator):
@@ -95,9 +95,9 @@ class IMPORT_MESH_OT_tl2(Operator):
             return {'CANCELLED'}
 
         conv = MeshConverter(
-            self.filepath, 
-            self.xml_directory, 
-            self.skeleton_path, 
+            self.filepath,
+            self.xml_directory,
+            self.skeleton_path,
             self.material_path)
 
         mesh_obj, mesh_data = conv.create_mesh()
@@ -144,7 +144,7 @@ class IMPORT_ANIM_OT_tl2(Operator):
 
     @classmethod
     def poll(cls, context):
-        return (context.active_object and 
+        return (context.active_object and
                 context.active_object.type == "ARMATURE")
 
     def invoke(self, context, event):
@@ -169,7 +169,7 @@ class IMPORT_ANIM_OT_tl2(Operator):
                 self.frames_per_second,
                 arma_obj)
 
-        return {'FINISHED'}    
+        return {'FINISHED'}
 
 
 def process_for_export(mesh, do_copy=True):
@@ -226,7 +226,7 @@ class EXPORT_MESH_OT_tl2weapon(Operator):
 
     @classmethod
     def poll(cls, context):
-        return (context.active_object and 
+        return (context.active_object and
                 context.active_object.type == "MESH" and
             len(context.active_object.data.uv_layers) == 1 and
             len(context.active_object.data.materials) >  0)
@@ -257,7 +257,7 @@ class Export_Skinned_Mesh_Base:
 
     @classmethod
     def poll(cls, context):
-        return (context.active_object and 
+        return (context.active_object and
                 context.active_object.type == "MESH" and
             len(context.active_object.data.uv_layers) == 1 and
             len(context.active_object.data.materials) >  0)
@@ -271,7 +271,7 @@ class Export_Skinned_Mesh_Base:
     def execute(self, context):
         obj = context.active_object
 
-        if (len(obj.modifiers) > 0 and 
+        if (len(obj.modifiers) > 0 and
             obj.modifiers[0].type == "ARMATURE" and
             obj.modifiers[0].object):
 
@@ -283,7 +283,7 @@ class Export_Skinned_Mesh_Base:
             bone_order = get_bone_order(arma_obj.data)
             vgi_to_bi = {vg.index: list_index(bone_order, vg.name) for vg in obj.vertex_groups} # might use list instead of dict if order is guaranteed
         else:
-            self.report({'ERROR'}, "No Armature Modifier Found")        
+            self.report({'ERROR'}, "No Armature Modifier Found")
             return {'CANCELLED'}
 
         process_for_export(obj.data, False)
@@ -330,7 +330,7 @@ class EXPORT_ANIM_OT_tl2anim(Operator):
 
     @classmethod
     def poll(cls, context):
-        return (context.active_object and 
+        return (context.active_object and
                 context.active_object.type == "ARMATURE")
 
     def invoke(self, context, event):
@@ -364,7 +364,7 @@ class MATERIAL_OT_tl2_assign_wardrobe_textures(Operator):
 
     @classmethod
     def poll(cls, context):
-        return (context.active_object and 
+        return (context.active_object and
                 context.active_object.type == "MESH")
 
     def invoke(self, context, event):
@@ -401,7 +401,7 @@ class MATERIAL_OT_tl2_assign_wardrobe_textures(Operator):
             if tex.image and tex.image.name == "NULL_01.DDS":
                 prefixes = "Hum_F", "HuF"
                 use_female = any(mat.name.startswith(prefix) for prefix in prefixes)
-                tex_prefix = "HUF_" if use_female else "HUM_" 
+                tex_prefix = "HUF_" if use_female else "HUM_"
                 mat_suffix = mat.name.rsplit("/")[1]
                 try:
                     tex_suffix = mat_to_tex[mat_suffix]
@@ -411,7 +411,7 @@ class MATERIAL_OT_tl2_assign_wardrobe_textures(Operator):
 
                 for tex_file in textures:
                     if ((tex_file.startswith(tex_prefix) or
-                         tex_file.startswith("HU_")) and 
+                         tex_file.startswith("HU_")) and
                         (tex_file.endswith(tex_suffix +  ".PNG") or
                          tex_file.endswith(tex_suffix + "S.PNG"))):
 
@@ -436,7 +436,7 @@ class MATERIAL_OT_tl2_assign_body_textures(Operator):
 
     @classmethod
     def poll(cls, context):
-        return (context.active_object and 
+        return (context.active_object and
                 context.active_object.type == "MESH")
 
     def invoke(self, context, event):
@@ -480,7 +480,7 @@ class SCENE_OT_tl2_set_skeleton_path(Operator):
         ("MALE",      "Male",      "", 0),
         ("FEMALE",    "Female",    "", 1),
         ("CLEAR",     "Clear",     "", 2)))
-    
+
     def execute(self, context):
         if self.gender == "CLEAR":
             context.scene['tl2_skel_file'] = ""
@@ -538,7 +538,7 @@ class PROPERTIES_PT_import_tl2(Panel):
         col.operator("material.tl2_assign_body_textures")
         col.operator_menu_enum("scene.tl2_set_skeleton_path", "gender")
         col.operator("import_scene.tl2_import_level_chunk")
-        col.alignment = "RIGHT" 
+        col.alignment = "RIGHT"
 
         scene = context.scene
         col = self.layout.column(align=True)
@@ -551,7 +551,7 @@ class PROPERTIES_PT_import_tl2(Panel):
 class Torchlight2Preferences(AddonPreferences):
     bl_idname = __name__
 
-    tl2_media_dir = StringProperty(name="Torchlight 2 Media Directory", subtype="DIR_PATH") 
+    tl2_media_dir = StringProperty(name="Torchlight 2 Media Directory", subtype="DIR_PATH")
     ogre_xml_converter = StringProperty(name="Ogre XML Converter", subtype="FILE_PATH")
     xml_output = StringProperty(name="XML Output Directory", subtype="DIR_PATH")
     use_cmd_args = BoolProperty(name="Use Command Line Arguments", default=True)
