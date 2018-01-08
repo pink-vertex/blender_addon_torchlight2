@@ -1,4 +1,7 @@
-from .utils import os, bpy, XMLWriter, get_addon_pref
+import os
+import bpy
+import subprocess
+from .utils import XMLWriter, get_addon_pref
 
 CMD_EXPORT = '{converter:s} {args:s} "{input:s}" "{output:s}"'
 SHARED_GEOMETRY = "<sharedgeometry vertexcount=\"{vertexcount:d}\">"
@@ -34,7 +37,7 @@ def convert_to_mesh(xml_input, mesh_output, create_directory=False):
     if not os.path.exists(xml_input):
         raise FileNotFoundError(xml_input)
 
-    mesh_directory = os.path.dirname(xml_input)
+    mesh_directory = os.path.dirname(mesh_output)
     if not os.path.exists(mesh_directory):
         if create_directory:
             os.makedirs(mesh_directory)
@@ -44,12 +47,13 @@ def convert_to_mesh(xml_input, mesh_output, create_directory=False):
     pref = get_addon_pref(bpy.context)
     args = pref.cmd_args_mesh_export if pref.use_cmd_args else ""
     ogre_xml_converter = pref.ogre_xml_converter
-    os.system(CMD_EXPORT.format(
-        converter=ogre_xml_converter,
-        args=args,
-        input=xml_input,
-        output=mesh_output
-        ))
+    arg_list = [ogre_xml_converter]
+    if not args == "":
+        # might replace str.split by shlex.split
+        arg_list.extend(args.split())
+    arg_list.append(xml_input)
+    arg_list.append(mesh_output)
+    subprocess.run(arg_list, check=True)
 
 def write_vertex_buffer(xml, mesh, vertex_indices, flags):
     (data_position,

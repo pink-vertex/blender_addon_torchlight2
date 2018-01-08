@@ -2,6 +2,7 @@ import os
 import bpy
 import math
 import xml.dom.minidom
+import subprocess
 from mathutils import Vector, Matrix, Quaternion, Euler, Color
 from . import __name__ as addon_name
 
@@ -57,12 +58,7 @@ def convert_to_xml(file_input, xml_output, create_directory=False, overwrite=Tru
             raise FileNotFoundError(os.path.dirname(xml_directory))
 
     ogre_xml_converter = get_addon_pref(bpy.context).ogre_xml_converter
-    cmd = '{converter:s} "{input:s}" "{output:s}"'
-    os.system(cmd.format(
-        converter=ogre_xml_converter,
-        input=file_input,
-        output=xml_output
-        ))
+    subprocess.run([ogre_xml_converter, file_input, xml_output], check=True)
 
 
 class XMLWriter:
